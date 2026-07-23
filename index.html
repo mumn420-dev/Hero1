@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeroTrack - Gamified Routine & Leaderboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header Navigation Bar -->
+    <header class="top-nav">
+        <div class="brand">
+            <span class="rocket-icon">🚀</span>
+            <h2 id="txtBrand">HeroTrack :</h2>
+        </div>
+        
+        <form id="registerForm" class="register-group">
+            <label for="childNameInput" id="lblChildName">Child Name:</label>
+            <input type="text" id="childNameInput" autocomplete="off" placeholder="Type name here...">
+            <button type="submit" id="registerBtn" class="btn-cyan">🚀 Register Hero</button>
+        </form>
+
+        <button id="monthlyReportBtn" class="btn-purple">🏆 Leaderboard & Monthly Report</button>
+        <button id="manualResetBtn" class="btn-reset-main">🔄 Reset All Data</button>
+        <button id="langToggleBtn" class="btn-lang">🌐 العربية</button>
+    </header>
+
+    <!-- Main Container for Child Cards -->
+    <main id="childrenContainer" class="cards-container">
+        <!-- Cards loaded dynamically -->
+    </main>
+
+    <!-- Leaderboard / Monthly Report Modal -->
+    <div id="monthlyModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="txtModalTitle">🏆 Hall of Champions & Scores</h3>
+                <button class="close-btn" onclick="closeModal('monthlyModal')">&times;</button>
+            </div>
+            <div id="modalBody" class="modal-body">
+                <!-- Winners and Leaderboard injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Detail Modal -->
+    <div id="dayDetailModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="dayDetailTitle">📅 Day History</h3>
+                <button class="close-btn" onclick="closeModal('dayDetailModal')">&times;</button>
+            </div>
+            <div id="dayDetailBody" class="modal-body">
+                <!-- Day details injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- AuxSystems Custom Confirmation Modal -->
+    <div id="confirmModal" class="modal-overlay aux-confirm-overlay">
+        <div class="modal-content aux-card">
+            <div class="aux-header">
+                <span class="aux-icon">⚠️</span>
+                <h3 id="confirmTitle">Confirm Action</h3>
+            </div>
+            <div class="aux-body">
+                <p id="confirmMessage">Are you sure you want to proceed?</p>
+            </div>
+            <div class="aux-actions">
+                <button id="confirmCancelBtn" class="aux-btn aux-btn-cancel">Cancel</button>
+                <button id="confirmOkBtn" class="aux-btn aux-btn-danger">Confirm Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
