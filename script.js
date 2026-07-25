@@ -1,4 +1,4 @@
-// State management starting completely empty for project testing
+// State management starting completely empty
 let heroes = [];
 
 // DOM Elements
@@ -6,6 +6,7 @@ const heroNameInput = document.getElementById('heroNameInput');
 const registerBtn = document.getElementById('registerBtn');
 const heroesListContainer = document.getElementById('heroesListContainer');
 const resetAllBtn = document.getElementById('resetAllBtn');
+const leaderboardBtn = document.getElementById('leaderboardBtn');
 
 // Initialize
 function init() {
@@ -14,6 +15,12 @@ function init() {
         if (e.key === 'Enter') registerHero();
     });
     resetAllBtn.addEventListener('click', resetAllData);
+    
+    // Monthly / Leaderboard button notification handler since it's inactive/reporting
+    leaderboardBtn.addEventListener('click', () => {
+        alert("Monthly Report & Leaderboard feature view is currently offline or under setup.");
+    });
+
     renderHeroes();
 }
 
@@ -26,8 +33,7 @@ function registerHero() {
         name: name,
         points: 0,
         chores: [],
-        // Days: M, T, W, T, F, S, S (false = empty/light red or default, true = completed green)
-        // F is set to active/completed demo style or interactive buttons
+        // 7 days: M, T, W, T, F, S, S (false by default -> styled as light red or inactive)
         days: [false, false, false, false, false, false, false], 
         weeklyPercentage: 0
     };
@@ -38,12 +44,18 @@ function registerHero() {
 }
 
 function removeHero(id) {
-    heroes = heroes.filter(h => h.id !== id);
-    renderHeroes();
+    // Warning confirmation before deletion
+    const hero = heroes.find(h => h.id === id);
+    const heroName = hero ? hero.name : "this hero";
+    if (confirm(`Warning: Are you sure you want to delete ${heroName} and all associated records?`)) {
+        heroes = heroes.filter(h => h.id !== id);
+        renderHeroes();
+    }
 }
 
 function resetAllData() {
-    if (confirm("Are you sure you want to reset all heroes and data?")) {
+    // Warning confirmation before resetting all data
+    if (confirm("Warning: This will delete all registered heroes and reset all data. Do you want to proceed?")) {
         heroes = [];
         renderHeroes();
     }
@@ -75,22 +87,24 @@ function toggleChore(heroId, choreIndex) {
 function removeChore(heroId, choreIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (hero) {
-        hero.chores.splice(choreIndex, 1);
-        renderHeroes();
+        // Warning confirmation before deleting a task/chore
+        const choreTitle = hero.chores[choreIndex].text;
+        if (confirm(`Warning: Are you sure you want to delete the chore "${choreTitle}"?`)) {
+            hero.chores.splice(choreIndex, 1);
+            renderHeroes();
+        }
     }
 }
 
-// Toggle day button state (Daily progress bar converted to clickable buttons)
+// Interactive daily progress buttons: toggle day completion status
 function toggleDay(heroId, dayIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (hero) {
-        // Cycle states: false -> true (completed green) -> missed (light red) -> false
-        // For simplicity: toggle boolean or rotate status
         hero.days[dayIndex] = !hero.days[dayIndex];
         
-        // Update weekly target percentage based on active days
-        const completedDays = hero.days.filter(Boolean).length;
-        hero.weeklyPercentage = Math.round((completedDays / 7) * 100);
+        // Accumulated percentage calculation: each day is 1/7th (~14.28%) of 100%
+        const completedDaysCount = hero.days.filter(Boolean).length;
+        hero.weeklyPercentage = Math.round((completedDaysCount / 7) * 100);
         
         renderHeroes();
     }
@@ -118,23 +132,17 @@ function renderHeroes() {
                     <button class="chore-text-btn" onclick="toggleChore(${hero.id}, ${index})">
                         <span>${chore.completed ? '☑' : '□'}</span> ${chore.text}
                     </button>
-                    <button class="chore-delete-btn" onclick="removeChore(${hero.id}, ${index})">✕</button>
+                    <button class="chore-delete-btn" onclick="removeChore(${hero.id}, ${index})" title="Delete chore">✕</button>
                 </div>
             `;
         });
 
-        // Build Days Progress Buttons HTML (Daily progress bar as buttons with light red styling for uncompleted/past options)
+        // Build Daily Progress Buttons HTML (Light red for uncompleted/past days, green for completed)
         let daysHTML = '';
         hero.days.forEach((isDone, dIndex) => {
-            let statusClass = '';
-            if (isDone) {
-                statusClass = 'completed';
-            } else if (dIndex === 4) { 
-                // Highlight Friday 'F' or previous days in light red as requested
-                statusClass = 'missed'; 
-            }
+            let statusClass = isDone ? 'completed' : 'missed';
             daysHTML += `
-                <div class="day-box ${statusClass}" onclick="toggleDay(${hero.id}, ${dIndex})" title="Click to toggle day">
+                <div class="day-box ${statusClass}" onclick="toggleDay(${hero.id}, ${dIndex})" title="Click to toggle day completion status">
                     <span>${dayLabels[dIndex]}</span>
                 </div>
             `;
@@ -176,7 +184,7 @@ function renderHeroes() {
     });
 }
 
-// Make functions globally accessible for inline event handlers
+// Global scope bindings for inline event execution
 window.addChore = addChore;
 window.toggleChore = toggleChore;
 window.removeChore = removeChore;
