@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HeroTrack</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="main-container">
+        <!-- Top Control Bar -->
+        <header class="top-bar">
+            <div class="brand">
+                <span class="brand-icon">🚀</span>
+                <span class="brand-title">HeroTrack :</span>
+            </div>
+            <div class="registration-area">
+                <label for="heroNameInput" class="sr-only">Child Name:</label>
+                <input type="text" id="heroNameInput" placeholder="Type name here...">
+                <button id="registerBtn" class="btn-register">🚀 Register Hero</button>
+            </div>
+            <div class="top-actions">
+                <button id="leaderboardBtn" class="btn-purple">🏆 Leaderboard & Monthly Report</button>
+                <button id="resetAllBtn" class="btn-red">🔄 Reset All Data</button>
+            </div>
+        </header>
+
+        <!-- Heroes Container -->
+        <div id="heroesListContainer">
+            <!-- Dynamically populated empty state or hero cards -->
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
