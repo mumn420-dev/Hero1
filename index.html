@@ -27,10 +27,21 @@
         </header>
 
         <!-- Heroes Container -->
-        <div id="heroesListContainer">
-            <!-- Dynamically populated empty state or hero cards -->
+        <div id="heroesListContainer"></div>
+    </div>
+
+    <!-- Monthly Report Modal Choice -->
+    <div id="reportModal" class="modal hidden">
+        <div class="modal-content">
+            <h2>🏆 Monthly Report & Leaderboard</h2>
+            <p id="modalMonthInfo">Current Month Statistics:</p>
+            <div id="modalReportBody"></div>
+            <button id="closeModalBtn" class="btn-register" style="margin-top: 15px;">Close Report</button>
         </div>
     </div>
+
+    <!-- Hidden file input for photo uploads -->
+    <input type="file" id="globalPhotoInput" accept="image/*" class="hidden">
 
     <script src="script.js"></script>
 </body>
