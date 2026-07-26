@@ -1,5 +1,53 @@
 let heroes = [];
 let activePhotoHeroId = null;
+let currentLang = localStorage.getItem('herotrack_lang') || 'en';
+
+const translations = {
+    en: {
+        brandTitle: "HeroTrack :",
+        namePlaceholder: "Type name here...",
+        registerBtn: "🚀 Register Hero",
+        reportBtn: "🏆 Report",
+        resetBtn: "🔄 Reset",
+        modalTitle: "🏆 Monthly Report & Leaderboard",
+        closeBtn: "Close Report",
+        removeBtn: "✕ Remove",
+        newChorePlaceholder: "New chore...",
+        dailyProgressLabel: "Daily Progress (100% Scale):",
+        weeklyTarget: "Weekly Target:",
+        monthlyTarget: "Monthly:",
+        emptyState: "No heroes registered yet. Type a name above and click \"Register Hero\" to begin!",
+        heroNameHeader: "Hero Name",
+        pointsHeader: "Points",
+        monthlyProgHeader: "Monthly Progress",
+        noHeroesReport: "No heroes registered yet to generate a report.",
+        confirmDeleteHero: "Warning: Are you sure you want to delete {name} and all associated records?",
+        confirmResetAll: "Warning: This will delete all registered heroes and reset all data. Do you want to proceed?",
+        confirmDeleteChore: "Warning: Are you sure you want to delete the chore \"{chore}\"?"
+    },
+    ar: {
+        brandTitle: "متابعة الأبطال :",
+        namePlaceholder: "اكتب اسم البطل هنا...",
+        registerBtn: "🚀 تسجيل بطل",
+        reportBtn: "🏆 التقرير",
+        resetBtn: "🔄 إعادة ضبط",
+        modalTitle: "🏆 التقرير الشهري ولوحة الشرف",
+        closeBtn: "إغلاق التقرير",
+        removeBtn: "✕ إزالة",
+        newChorePlaceholder: "مهمة جديدة...",
+        dailyProgressLabel: "التقدم اليومي (مقياس 100%):",
+        weeklyTarget: "الهدف الأسبوعي:",
+        monthlyTarget: "الشهري:",
+        emptyState: "لا يوجد أبطال مسجلين بعد. اكتب الاسم بالاعلى واضغط \"تسجيل بطل\" للبدء!",
+        heroNameHeader: "اسم البطل",
+        pointsHeader: "النقاط",
+        monthlyProgHeader: "التقدم الشهري",
+        noHeroesReport: "لا يوجد أبطال مسجلين لإنشاء تقرير.",
+        confirmDeleteHero: "تحذير: هل أنت متأكد أنك تريد حذف {name} وكل السجلات المرتبطة؟",
+        confirmResetAll: "تحذير: سيؤدي هذا إلى حذف كل الأبطال المسجلين وإعادة ضبط البيانات. هل تريد المتابعة؟",
+        confirmDeleteChore: "تحذير: هل أنت متأكد من حذف المهمة \"{chore}\"?"
+    }
+};
 
 // DOM Elements
 const heroNameInput = document.getElementById('heroNameInput');
@@ -12,8 +60,12 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 const modalReportBody = document.getElementById('modalReportBody');
 const modalMonthInfo = document.getElementById('modalMonthInfo');
 const globalPhotoInput = document.getElementById('globalPhotoInput');
+const langToggleBtn = document.getElementById('langToggleBtn');
 
 function init() {
+    loadData();
+    applyLanguage();
+
     registerBtn.addEventListener('click', registerHero);
     heroNameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') registerHero(); });
     resetAllBtn.addEventListener('click', resetAllData);
@@ -22,19 +74,60 @@ function init() {
     closeModalBtn.addEventListener('click', () => reportModal.classList.add('hidden'));
 
     globalPhotoInput.addEventListener('change', handlePhotoUpload);
+    langToggleBtn.addEventListener('click', toggleLanguage);
 
     renderHeroes();
 }
 
-// Get exact number of days in the current month (28, 29, 30, or 31)
+// LocalStorage Persistence Functions
+function saveData() {
+    localStorage.setItem('herotrack_heroes', JSON.stringify(heroes));
+}
+
+function loadData() {
+    const saved = localStorage.getItem('herotrack_heroes');
+    if (saved) {
+        try {
+            heroes = JSON.parse(saved);
+        } catch(e) {
+            heroes = [];
+        }
+    }
+}
+
+function t(key) {
+    return translations[currentLang][key] || key;
+}
+
+function toggleLanguage() {
+    currentLang = currentLang === 'en' ? 'ar' : 'en';
+    localStorage.setItem('herotrack_lang', currentLang);
+    applyLanguage();
+    renderHeroes();
+}
+
+function applyLanguage() {
+    document.documentElement.dir = currentLang === 'ar' ? 'rtl' : 'ltr';
+    document.documentElement.lang = currentLang;
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        el.textContent = t(key);
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        el.placeholder = t(key);
+    });
+}
+
 function getDaysInCurrentMonth() {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 }
 
-// Get current day index where Saturday is correctly mapped (Mon=0, Tue=1, Wed=2, Thu=3, Fri=4, Sat=5, Sun=6)
 function getCurrentDayIndex() {
-    const jsDay = new Date().getDay(); // 0 is Sunday, 1 is Monday, ..., 6 is Saturday
+    const jsDay = new Date().getDay(); 
     return jsDay === 0 ? 6 : jsDay - 1;
 }
 
@@ -50,28 +143,32 @@ function registerHero() {
         points: 0,
         photo: null, 
         chores: [],
-        days: [0, 0, 0, 0, 0, 0, 0], // Percentage achieved per day (0 to 100)
-        monthlyDays: new Array(daysInMonth).fill(0), // Percentage achieved per month day
+        days: [0, 0, 0, 0, 0, 0, 0], 
+        monthlyDays: new Array(daysInMonth).fill(0), 
         weeklyPercentage: 0,
         monthlyPercentage: 0
     };
 
     heroes.push(newHero);
     heroNameInput.value = '';
+    saveData();
     renderHeroes();
 }
 
 function removeHero(id) {
     const hero = heroes.find(h => h.id === id);
-    if (confirm(`Warning: Are you sure you want to delete ${hero ? hero.name : 'this hero'} and all associated records?`)) {
+    const msg = t('confirmDeleteHero').replace('{name}', hero ? hero.name : '');
+    if (confirm(msg)) {
         heroes = heroes.filter(h => h.id !== id);
+        saveData();
         renderHeroes();
     }
 }
 
 function resetAllData() {
-    if (confirm("Warning: This will delete all registered heroes and reset all data. Do you want to proceed?")) {
+    if (confirm(t('confirmResetAll'))) {
         heroes = [];
+        saveData();
         renderHeroes();
     }
 }
@@ -80,6 +177,7 @@ function updateHeroName(id, newName) {
     const hero = heroes.find(h => h.id === id);
     if (hero) {
         hero.name = newName.trim();
+        saveData();
     }
 }
 
@@ -87,6 +185,7 @@ function updateChoreText(heroId, choreIndex, newText) {
     const hero = heroes.find(h => h.id === heroId);
     if (hero && hero.chores[choreIndex]) {
         hero.chores[choreIndex].text = newText.trim();
+        saveData();
     }
 }
 
@@ -101,6 +200,7 @@ function addChore(heroId) {
         inputEl.value = '';
         
         updateTodayTaskProgress(hero);
+        saveData();
         renderHeroes();
     }
 }
@@ -113,6 +213,7 @@ function toggleChore(heroId, choreIndex) {
         if (hero.points < 0) hero.points = 0;
 
         updateTodayTaskProgress(hero);
+        saveData();
         renderHeroes();
     }
 }
@@ -120,10 +221,12 @@ function toggleChore(heroId, choreIndex) {
 function removeChore(heroId, choreIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (hero) {
-        if (confirm(`Warning: Are you sure you want to delete the chore "${hero.chores[choreIndex].text}"?`)) {
+        const msg = t('confirmDeleteChore').replace('{chore}', hero.chores[choreIndex].text);
+        if (confirm(msg)) {
             hero.chores.splice(choreIndex, 1);
             
             updateTodayTaskProgress(hero);
+            saveData();
             renderHeroes();
         }
     }
@@ -159,6 +262,7 @@ function toggleDay(heroId, dayIndex) {
         hero.days[dayIndex] = hero.days[dayIndex] === 100 ? 0 : 100;
         hero.monthlyDays[dayIndex] = hero.days[dayIndex];
         recalculateProgress(hero);
+        saveData();
         renderHeroes();
     }
 }
@@ -176,6 +280,7 @@ function handlePhotoUpload(e) {
             const hero = heroes.find(h => h.id === activePhotoHeroId);
             if (hero) {
                 hero.photo = uploadEvent.target.result;
+                saveData();
                 renderHeroes();
             }
             activePhotoHeroId = null;
@@ -191,15 +296,15 @@ function openMonthlyReportModal() {
     const currentMonthName = monthNames[now.getMonth()];
     const daysInMonth = getDaysInCurrentMonth();
 
-    modalMonthInfo.textContent = `Report for ${currentMonthName} (Total Days: ${daysInMonth}):`;
+    modalMonthInfo.textContent = `${currentMonthName} (${daysInMonth} Days):`;
 
     if (heroes.length === 0) {
-        modalReportBody.innerHTML = `<p>No heroes registered yet to generate a report.</p>`;
+        modalReportBody.innerHTML = `<p>${t('noHeroesReport')}</p>`;
     } else {
         let html = `<table style="width:100%; border-collapse: collapse;">`;
-        html += `<tr style="border-bottom: 1px solid #ccc;"><th style="text-align:left; padding:6px;">Hero Name</th><th style="text-align:center; padding:6px;">Points</th><th style="text-align:right; padding:6px;">Monthly Progress</th></tr>`;
+        html += `<tr style="border-bottom: 1px solid #ccc;"><th style="text-align:start; padding:6px;">${t('heroNameHeader')}</th><th style="text-align:center; padding:6px;">${t('pointsHeader')}</th><th style="text-align:end; padding:6px;">${t('monthlyProgHeader')}</th></tr>`;
         heroes.forEach(h => {
-            html += `<tr style="border-bottom: 1px solid #eee;"><td style="padding:6px;">${h.name}</td><td style="text-align:center; padding:6px;">⭐ ${h.points}</td><td style="text-align:right; padding:6px;">${h.monthlyPercentage}%</td></tr>`;
+            html += `<tr style="border-bottom: 1px solid #eee;"><td style="padding:6px; text-align:start;">${h.name}</td><td style="text-align:center; padding:6px;">⭐ ${h.points}</td><td style="text-align:end; padding:6px;">${h.monthlyPercentage}%</td></tr>`;
         });
         html += `</table>`;
         modalReportBody.innerHTML = html;
@@ -212,11 +317,11 @@ function renderHeroes() {
     heroesListContainer.innerHTML = '';
 
     if (heroes.length === 0) {
-        heroesListContainer.innerHTML = `<div class="empty-state">No heroes registered yet. Type a name above and click "Register Hero" to begin!</div>`;
+        heroesListContainer.innerHTML = `<div class="empty-state">${t('emptyState')}</div>`;
         return;
     }
 
-    const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    const dayLabels = currentLang === 'ar' ? ['ن', 'ث', 'ر', 'خ', 'ج', 'س', 'ح'] : ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
     heroes.forEach(hero => {
         const card = document.createElement('div');
@@ -246,12 +351,11 @@ function renderHeroes() {
             `;
         });
 
-        let avatarContent = `<span style="font-size: 2rem;">⭐</span><div class="avatar-overlay">Edit Photo</div>`;
+        let avatarContent = `<span style="font-size: 2rem;">⭐</span>`;
         if (hero.photo) {
-            avatarContent = `<img src="${hero.photo}" alt="Hero Photo"><div class="avatar-overlay">Edit Photo</div>`;
+            avatarContent = `<img src="${hero.photo}" alt="Hero Photo">`;
         }
 
-        // Circular conic gradient styles for weekly (light blue) and monthly (light red) progress circles
         const weeklyDeg = Math.round((hero.weeklyPercentage / 100) * 360);
         const weeklyCircleStyle = `background: conic-gradient(#3498db ${weeklyDeg}deg, #ecf0f1 0deg); border: 3px solid #2980b9;`;
 
@@ -265,19 +369,19 @@ function renderHeroes() {
                 </div>
                 <input type="text" class="hero-name-input" value="${hero.name}" onchange="updateHeroName(${hero.id}, this.value)">
                 <div class="pts-badge">⭐ ${hero.points} pts</div>
-                <button class="btn-remove" onclick="removeHero(${hero.id})">✕ Remove</button>
+                <button class="btn-remove" onclick="removeHero(${hero.id})">${t('removeBtn')}</button>
             </div>
 
             <div class="chores-section">
                 <div class="add-chore-row">
-                    <input type="text" id="chore-input-${hero.id}" placeholder="New chore..." onkeypress="if(event.key==='Enter') addChore(${hero.id})">
+                    <input type="text" id="chore-input-${hero.id}" placeholder="${t('newChorePlaceholder')}" onkeypress="if(event.key==='Enter') addChore(${hero.id})">
                     <button class="btn-add-chore" onclick="addChore(${hero.id})">+</button>
                 </div>
                 ${choresHTML}
             </div>
 
             <div class="daily-progress-section">
-                <div class="progress-label">Daily Progress (100% Scale):</div>
+                <div class="progress-label">${t('dailyProgressLabel')}</div>
                 <div class="days-grid">
                     ${daysHTML}
                 </div>
@@ -285,13 +389,13 @@ function renderHeroes() {
 
             <div class="targets-column">
                 <div class="target-block">
-                    <div class="target-title">Weekly Target:</div>
+                    <div class="target-title">${t('weeklyTarget')}</div>
                     <div class="target-circle" style="${weeklyCircleStyle}">
                         <span style="background: white; width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;">${hero.weeklyPercentage}%</span>
                     </div>
                 </div>
                 <div class="target-block">
-                    <div class="target-title">Monthly (${hero.monthlyDays.length}d):</div>
+                    <div class="target-title">${t('monthlyTarget')}</div>
                     <div class="target-circle" style="${monthlyCircleStyle}">
                         <span style="background: white; width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;">${hero.monthlyPercentage}%</span>
                     </div>
