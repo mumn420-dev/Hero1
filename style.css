@@ -125,7 +125,6 @@ body {
     width: 100%;
 }
 
-/* For Mobile screens (Phones & Tablets) */
 @media (max-width: 900px) {
     .hero-card {
         grid-template-columns: 1fr;
@@ -182,6 +181,16 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}
+
+.avatar-container input[type="file"] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
 }
 
 .hero-name-input {
