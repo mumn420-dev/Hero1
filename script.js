@@ -100,13 +100,11 @@ function addChore(heroId) {
         hero.chores.push({ text: choreText, completed: false });
         inputEl.value = '';
         
-        // Recalculate daily task progress percentage when a new task is added
         updateTodayTaskProgress(hero);
         renderHeroes();
     }
 }
 
-// Automatically update today's task progress accurately based on completed tasks / total tasks ratio
 function toggleChore(heroId, choreIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (hero && hero.chores[choreIndex]) {
@@ -131,7 +129,6 @@ function removeChore(heroId, choreIndex) {
     }
 }
 
-// Calculate precise ratio for today's tasks and overall accumulated percentages
 function updateTodayTaskProgress(hero) {
     const todayIndex = getCurrentDayIndex();
     
@@ -139,7 +136,6 @@ function updateTodayTaskProgress(hero) {
         hero.days[todayIndex] = 0;
     } else {
         const completedCount = hero.chores.filter(c => c.completed).length;
-        // Percentage based strictly on completed tasks vs total tasks for that day
         hero.days[todayIndex] = Math.round((completedCount / hero.chores.length) * 100);
     }
 
@@ -148,7 +144,6 @@ function updateTodayTaskProgress(hero) {
     recalculateProgress(hero);
 }
 
-// Recalculate weekly and monthly averages
 function recalculateProgress(hero) {
     const totalWeekScore = hero.days.reduce((acc, val) => acc + val, 0);
     hero.weeklyPercentage = Math.round(totalWeekScore / 7);
@@ -158,7 +153,6 @@ function recalculateProgress(hero) {
     hero.monthlyPercentage = Math.round(totalMonthScore / daysInMonth);
 }
 
-// Allow manual override by clicking day box if needed
 function toggleDay(heroId, dayIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (hero) {
@@ -243,11 +237,9 @@ function renderHeroes() {
 
         let daysHTML = '';
         hero.days.forEach((dayPct, dIndex) => {
-            let statusClass = dayPct > 0 ? 'completed' : 'missed';
-            if (dayPct === 0) statusClass = 'missed';
-            
             daysHTML += `
-                <div class="day-box ${statusClass}" onclick="toggleDay(${hero.id}, ${dIndex})" title="Click to toggle day">
+                <div class="day-box" onclick="toggleDay(${hero.id}, ${dIndex})" title="Click to toggle day">
+                    <div class="day-fill" style="height: ${dayPct}%;"></div>
                     <span>${dayLabels[dIndex]}</span>
                     <span class="day-pct">${dayPct}%</span>
                 </div>
@@ -258,6 +250,13 @@ function renderHeroes() {
         if (hero.photo) {
             avatarContent = `<img src="${hero.photo}" alt="Hero Photo"><div class="avatar-overlay">Edit Photo</div>`;
         }
+
+        // Circular conic gradient styles for weekly (light blue) and monthly (light red) progress circles
+        const weeklyDeg = Math.round((hero.weeklyPercentage / 100) * 360);
+        const weeklyCircleStyle = `background: conic-gradient(#3498db ${weeklyDeg}deg, #ecf0f1 0deg); border: 3px solid #2980b9;`;
+
+        const monthlyDeg = Math.round((hero.monthlyPercentage / 100) * 360);
+        const monthlyCircleStyle = `background: conic-gradient(#e74c3c ${monthlyDeg}deg, #ecf0f1 0deg); border: 3px solid #c0392b;`;
 
         card.innerHTML = `
             <div class="hero-profile">
@@ -287,11 +286,15 @@ function renderHeroes() {
             <div class="targets-column">
                 <div class="target-block">
                     <div class="target-title">Weekly Target:</div>
-                    <div class="target-circle">${hero.weeklyPercentage}%</div>
+                    <div class="target-circle" style="${weeklyCircleStyle}">
+                        <span style="background: white; width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;">${hero.weeklyPercentage}%</span>
+                    </div>
                 </div>
                 <div class="target-block">
                     <div class="target-title">Monthly (${hero.monthlyDays.length}d):</div>
-                    <div class="target-circle">${hero.monthlyPercentage}%</div>
+                    <div class="target-circle" style="${monthlyCircleStyle}">
+                        <span style="background: white; width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;">${hero.monthlyPercentage}%</span>
+                    </div>
                 </div>
             </div>
         `;
