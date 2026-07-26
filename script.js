@@ -1,5 +1,6 @@
 let heroes = [];
 let currentLang = localStorage.getItem('herotrack_lang') || 'en';
+let activeUploadHeroId = null; // Tracks which hero is currently getting a picture update
 
 const translations = {
     en: {
@@ -9,7 +10,7 @@ const translations = {
         reportBtn: "🏆 Report",
         resetBtn: "🔄 Reset",
         modalTitle: "🏆 Monthly Report & Leaderboard",
-        closeBtn: "Close Report",
+        closeBtn: "Close",
         removeBtn: "✕ Remove",
         newChorePlaceholder: "New chore...",
         dailyProgressLabel: "Daily Progress (100% Scale):",
@@ -31,7 +32,7 @@ const translations = {
         reportBtn: "🏆 التقرير",
         resetBtn: "🔄 إعادة ضبط",
         modalTitle: "🏆 التقرير الشهري ولوحة الشرف",
-        closeBtn: "إغلاق التقرير",
+        closeBtn: "إغلاق",
         removeBtn: "✕ إزالة",
         newChorePlaceholder: "مهمة جديدة...",
         dailyProgressLabel: "التقدم اليومي (مقياس 100%):",
@@ -60,8 +61,16 @@ const modalReportBody = document.getElementById('modalReportBody');
 const modalMonthInfo = document.getElementById('modalMonthInfo');
 const langToggleBtn = document.getElementById('langToggleBtn');
 
+const globalImageInput = document.getElementById('globalImageInput');
+const dayModal = document.getElementById('dayModal');
+const dayModalTitle = document.getElementById('dayModalTitle');
+const dayModalSubInfo = document.getElementById('dayModalSubInfo');
+const dayModalBody = document.getElementById('dayModalBody');
+const closeDayModalBtn = document.getElementById('closeDayModalBtn');
+
 function init() {
     loadData();
+    checkDailyReset(); // Checks if a new calendar day has arrived and resets daily checkboxes/tasks
     applyLanguage();
 
     registerBtn.addEventListener('click', registerHero);
@@ -70,8 +79,12 @@ function init() {
     
     leaderboardBtn.addEventListener('click', openMonthlyReportModal);
     closeModalBtn.addEventListener('click', () => reportModal.classList.add('hidden'));
+    closeDayModalBtn.addEventListener('click', () => dayModal.classList.add('hidden'));
 
     langToggleBtn.addEventListener('click', toggleLanguage);
+
+    // Global image file change listener (restored functionality)
+    globalImageInput.addEventListener('change', handleGlobalPhotoUpload);
 
     renderHeroes();
 }
@@ -88,6 +101,24 @@ function loadData() {
         } catch(e) {
             heroes = [];
         }
+    }
+}
+
+// Automatically reset chores completion for a new day while preserving historical day progress records
+function checkDailyReset() {
+    const todayStr = new Date().toDateString();
+    const lastSavedDate = localStorage.getItem('herotrack_last_date');
+
+    if (lastSavedDate !== todayStr) {
+        heroes.forEach(hero => {
+            if (hero.chores && hero.chores.length > 0) {
+                hero.chores.forEach(chore => {
+                    chore.completed = false; // Reset task status for the new day
+                });
+            }
+        });
+        localStorage.setItem('herotrack_last_date', todayStr);
+        saveData();
     }
 }
 
@@ -140,6 +171,7 @@ function registerHero() {
         photo: null, 
         chores: [],
         days: [0, 0, 0, 0, 0, 0, 0], 
+        dayChoresHistory: {}, // Stores completed tasks snapshot per day index
         monthlyDays: new Array(daysInMonth).fill(0), 
         weeklyPercentage: 0,
         monthlyPercentage: 0
@@ -233,13 +265,17 @@ function updateTodayTaskProgress(hero) {
     
     if (hero.chores.length === 0) {
         hero.days[todayIndex] = 0;
+        if (hero.dayChoresHistory) delete hero.dayChoresHistory[todayIndex];
     } else {
         const completedCount = hero.chores.filter(c => c.completed).length;
         hero.days[todayIndex] = Math.round((completedCount / hero.chores.length) * 100);
+        
+        // Save snapshot of completed/uncompleted tasks for today's history viewer
+        if (!hero.dayChoresHistory) hero.dayChoresHistory = {};
+        hero.dayChoresHistory[todayIndex] = hero.chores.map(c => ({ text: c.text, completed: c.completed }));
     }
 
     hero.monthlyDays[todayIndex] = hero.days[todayIndex];
-
     recalculateProgress(hero);
 }
 
@@ -252,31 +288,60 @@ function recalculateProgress(hero) {
     hero.monthlyPercentage = Math.round(totalMonthScore / daysInMonth);
 }
 
-function toggleDay(heroId, dayIndex) {
-    const hero = heroes.find(h => h.id === heroId);
-    if (hero) {
-        hero.days[dayIndex] = hero.days[dayIndex] === 100 ? 0 : 100;
-        hero.monthlyDays[dayIndex] = hero.days[dayIndex];
-        recalculateProgress(hero);
-        saveData();
-        renderHeroes();
-    }
+// Trigger global file upload dialog for a specific hero
+function triggerPhotoUpload(heroId) {
+    activeUploadHeroId = heroId;
+    globalImageInput.value = ''; // Reset input so selecting same file works
+    globalImageInput.click();
 }
 
-function handlePhotoUpload(e, heroId) {
+function handleGlobalPhotoUpload(e) {
     const file = e.target.files[0];
-    if (file) {
+    if (file && activeUploadHeroId !== null) {
         const reader = new FileReader();
         reader.onload = function(uploadEvent) {
-            const hero = heroes.find(h => h.id === heroId);
+            const hero = heroes.find(h => h.id === activeUploadHeroId);
             if (hero) {
                 hero.photo = uploadEvent.target.result;
                 saveData();
                 renderHeroes();
             }
+            activeUploadHeroId = null;
         };
         reader.readAsDataURL(file);
     }
+}
+
+// View tasks record for clicked day box
+function openDayDetailsModal(heroId, dayIndex) {
+    const hero = heroes.find(h => h.id === heroId);
+    if (!hero) return;
+
+    const dayLabelsFull = currentLang === 'ar' 
+        ? ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+        : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+    dayModalTitle.textContent = `${hero.name} — ${dayLabelsFull[dayIndex]}`;
+    dayModalSubInfo.textContent = `Completion Rate: ${hero.days[dayIndex]}%`;
+
+    const historyData = hero.dayChoresHistory && hero.dayChoresHistory[dayIndex];
+    if (!historyData || historyData.length === 0) {
+        dayModalBody.innerHTML = `<p style="text-align:center; color:#777; font-style:italic;">No recorded task data available for this day.</p>`;
+    } else {
+        let html = `<ul style="list-style-type: none; padding: 0;">`;
+        historyData.forEach(item => {
+            const icon = item.completed ? '✅' : '❌';
+            const color = item.completed ? '#27ae60' : '#c0392b';
+            html += `<li style="padding: 6px 8px; margin-bottom: 4px; background: #f8f9fa; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+                <span>${item.text}</span>
+                <span style="color: ${color}; font-weight: bold;">${icon} ${item.completed ? 'Completed' : 'Missed'}</span>
+            </li>`;
+        });
+        html += `</ul>`;
+        dayModalBody.innerHTML = html;
+    }
+
+    dayModal.classList.remove('hidden');
 }
 
 function openMonthlyReportModal() {
@@ -332,7 +397,7 @@ function renderHeroes() {
         let daysHTML = '';
         hero.days.forEach((dayPct, dIndex) => {
             daysHTML += `
-                <div class="day-box" onclick="toggleDay(${hero.id}, ${dIndex})" title="Click to toggle day">
+                <div class="day-box" onclick="openDayDetailsModal(${hero.id}, ${dIndex})" title="Click to view tasks record for this day">
                     <div class="day-fill" style="height: ${dayPct}%;"></div>
                     <span>${dayLabels[dIndex]}</span>
                     <span class="day-pct">${dayPct}%</span>
@@ -353,9 +418,8 @@ function renderHeroes() {
 
         card.innerHTML = `
             <div class="hero-profile">
-                <div class="avatar-container" title="Click to change profile picture">
+                <div class="avatar-container" onclick="triggerPhotoUpload(${hero.id})" title="Click to change profile picture">
                     ${avatarContent}
-                    <input type="file" accept="image/*" onchange="handlePhotoUpload(event, ${hero.id})">
                 </div>
                 <input type="text" class="hero-name-input" value="${hero.name}" onchange="updateHeroName(${hero.id}, this.value)">
                 <div class="pts-badge">⭐ ${hero.points} pts</div>
@@ -401,9 +465,9 @@ window.addChore = addChore;
 window.toggleChore = toggleChore;
 window.removeChore = removeChore;
 window.removeHero = removeHero;
-window.toggleDay = toggleDay;
+window.openDayDetailsModal = openDayDetailsModal;
 window.updateHeroName = updateHeroName;
 window.updateChoreText = updateChoreText;
-window.handlePhotoUpload = handlePhotoUpload;
+window.triggerPhotoUpload = triggerPhotoUpload;
 
 init();
