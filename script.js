@@ -281,31 +281,6 @@ function recalculateProgress(hero) {
     hero.monthlyPercentage = Math.round(totalMonthScore / daysInMonth);
 }
 
-// Direct function to trigger image upload cleanly via dynamic file element creation
-function triggerImageUpload(heroId) {
-    const hero = heroes.find(h => h.id === heroId);
-    if (!hero) return;
-
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = 'image/*';
-    
-    fileInput.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(uploadEvent) {
-                hero.photo = uploadEvent.target.result;
-                saveData();
-                renderHeroes();
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-
-    fileInput.click();
-}
-
 function openDayDetailsModal(heroId, dayIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (!hero) return;
@@ -387,17 +362,6 @@ function renderHeroes() {
             `;
         });
 
-        let daysHTML = '';
-        hero.days.forEach((dayPct, dIndex) => {
-            daysHTML += `
-                <div class="day-box" onclick="openDayDetailsModal(${hero.id}, ${dIndex})" title="Click to view tasks record for this day">
-                    <div class="day-fill" style="height: ${dayPct}%;"></div>
-                    <span>${dayLabels[dIndex]}</span>
-                    <span class="day-pct">${dayPct}%</span>
-                </div>
-            `;
-        });
-
         let avatarContent = `<span style="font-size: 1.8rem;">⭐</span>`;
         if (hero.photo) {
             avatarContent = `<img src="${hero.photo}" alt="Hero Photo">`;
@@ -411,8 +375,9 @@ function renderHeroes() {
 
         card.innerHTML = `
             <div class="hero-profile">
-                <div class="avatar-container" onclick="triggerImageUpload(${hero.id})" title="Click to change profile picture">
+                <div class="avatar-container" id="avatar-${hero.id}" title="Click to change profile picture">
                     ${avatarContent}
+                    <input type="file" id="fileInput-${hero.id}" accept="image/*" style="display: none;">
                 </div>
                 <input type="text" class="hero-name-input" value="${hero.name}" onchange="updateHeroName(${hero.id}, this.value)">
                 <div class="pts-badge">⭐ ${hero.points} pts</div>
@@ -429,9 +394,7 @@ function renderHeroes() {
 
             <div class="daily-progress-section">
                 <div class="progress-label">${t('dailyProgressLabel')}</div>
-                <div class="days-grid">
-                    ${daysHTML}
-                </div>
+                <div class="days-grid" id="days-grid-${hero.id}"></div>
             </div>
 
             <div class="targets-column">
@@ -451,6 +414,44 @@ function renderHeroes() {
         `;
 
         heroesListContainer.appendChild(card);
+
+        // Render and attach listeners for each day box dynamically to guarantee click capture
+        const daysGridEl = document.getElementById(`days-grid-${hero.id}`);
+        hero.days.forEach((dayPct, dIndex) => {
+            const dayBox = document.createElement('div');
+            dayBox.className = 'day-box';
+            dayBox.title = 'Click to view tasks record for this day';
+            dayBox.innerHTML = `
+                <div class="day-fill" style="height: ${dayPct}%;"></div>
+                <span>${dayLabels[dIndex]}</span>
+                <span class="day-pct">${dayPct}%</span>
+            `;
+            dayBox.addEventListener('click', () => {
+                openDayDetailsModal(hero.id, dIndex);
+            });
+            daysGridEl.appendChild(dayBox);
+        });
+
+        // Attach dedicated file upload listeners directly to each rendered element
+        const avatarBox = document.getElementById(`avatar-${hero.id}`);
+        const fileInput = document.getElementById(`fileInput-${hero.id}`);
+
+        avatarBox.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    hero.photo = uploadEvent.target.result;
+                    saveData();
+                    renderHeroes();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     });
 }
 
@@ -461,6 +462,5 @@ window.removeHero = removeHero;
 window.openDayDetailsModal = openDayDetailsModal;
 window.updateHeroName = updateHeroName;
 window.updateChoreText = updateChoreText;
-window.triggerImageUpload = triggerImageUpload;
 
 init();
