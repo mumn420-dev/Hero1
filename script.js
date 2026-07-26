@@ -1,5 +1,4 @@
 let heroes = [];
-let activePhotoHeroId = null;
 let currentLang = localStorage.getItem('herotrack_lang') || 'en';
 
 const translations = {
@@ -59,7 +58,6 @@ const reportModal = document.getElementById('reportModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
 const modalReportBody = document.getElementById('modalReportBody');
 const modalMonthInfo = document.getElementById('modalMonthInfo');
-const globalPhotoInput = document.getElementById('globalPhotoInput');
 const langToggleBtn = document.getElementById('langToggleBtn');
 
 function init() {
@@ -73,7 +71,6 @@ function init() {
     leaderboardBtn.addEventListener('click', openMonthlyReportModal);
     closeModalBtn.addEventListener('click', () => reportModal.classList.add('hidden'));
 
-    globalPhotoInput.addEventListener('change', handlePhotoUpload);
     langToggleBtn.addEventListener('click', toggleLanguage);
 
     renderHeroes();
@@ -266,24 +263,17 @@ function toggleDay(heroId, dayIndex) {
     }
 }
 
-function triggerPhotoUpload(heroId) {
-    activePhotoHeroId = heroId;
-    globalPhotoInput.value = ''; // Reset input to allow choosing the same file again if needed
-    globalPhotoInput.click();
-}
-
-function handlePhotoUpload(e) {
+function handlePhotoUpload(e, heroId) {
     const file = e.target.files[0];
-    if (file && activePhotoHeroId !== null) {
+    if (file) {
         const reader = new FileReader();
         reader.onload = function(uploadEvent) {
-            const hero = heroes.find(h => h.id === activePhotoHeroId);
+            const hero = heroes.find(h => h.id === heroId);
             if (hero) {
                 hero.photo = uploadEvent.target.result;
                 saveData();
                 renderHeroes();
             }
-            activePhotoHeroId = null;
         };
         reader.readAsDataURL(file);
     }
@@ -363,8 +353,9 @@ function renderHeroes() {
 
         card.innerHTML = `
             <div class="hero-profile">
-                <div class="avatar-container" onclick="triggerPhotoUpload(${hero.id})" title="Click to change profile picture">
+                <div class="avatar-container" title="Click to change profile picture">
                     ${avatarContent}
+                    <input type="file" accept="image/*" onchange="handlePhotoUpload(event, ${hero.id})">
                 </div>
                 <input type="text" class="hero-name-input" value="${hero.name}" onchange="updateHeroName(${hero.id}, this.value)">
                 <div class="pts-badge">⭐ ${hero.points} pts</div>
@@ -413,6 +404,6 @@ window.removeHero = removeHero;
 window.toggleDay = toggleDay;
 window.updateHeroName = updateHeroName;
 window.updateChoreText = updateChoreText;
-window.triggerPhotoUpload = triggerPhotoUpload;
+window.handlePhotoUpload = handlePhotoUpload;
 
 init();
