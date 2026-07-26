@@ -79,7 +79,6 @@ function init() {
     renderHeroes();
 }
 
-// LocalStorage Persistence Functions
 function saveData() {
     localStorage.setItem('herotrack_heroes', JSON.stringify(heroes));
 }
@@ -269,6 +268,7 @@ function toggleDay(heroId, dayIndex) {
 
 function triggerPhotoUpload(heroId) {
     activePhotoHeroId = heroId;
+    globalPhotoInput.value = ''; // Reset input to allow choosing the same file again if needed
     globalPhotoInput.click();
 }
 
@@ -284,7 +284,6 @@ function handlePhotoUpload(e) {
                 renderHeroes();
             }
             activePhotoHeroId = null;
-            globalPhotoInput.value = '';
         };
         reader.readAsDataURL(file);
     }
@@ -351,7 +350,7 @@ function renderHeroes() {
             `;
         });
 
-        let avatarContent = `<span style="font-size: 2rem;">⭐</span>`;
+        let avatarContent = `<span style="font-size: 1.8rem;">⭐</span>`;
         if (hero.photo) {
             avatarContent = `<img src="${hero.photo}" alt="Hero Photo">`;
         }
@@ -391,13 +390,13 @@ function renderHeroes() {
                 <div class="target-block">
                     <div class="target-title">${t('weeklyTarget')}</div>
                     <div class="target-circle" style="${weeklyCircleStyle}">
-                        <span style="background: white; width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;">${hero.weeklyPercentage}%</span>
+                        <span style="background: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">${hero.weeklyPercentage}%</span>
                     </div>
                 </div>
                 <div class="target-block">
                     <div class="target-title">${t('monthlyTarget')}</div>
                     <div class="target-circle" style="${monthlyCircleStyle}">
-                        <span style="background: white; width: 33px; height: 33px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem;">${hero.monthlyPercentage}%</span>
+                        <span style="background: white; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem;">${hero.monthlyPercentage}%</span>
                     </div>
                 </div>
             </div>
