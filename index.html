@@ -41,6 +41,19 @@
         </div>
     </div>
 
+    <!-- Day Details Modal (To view past days' completed tasks) -->
+    <div id="dayModal" class="modal hidden">
+        <div class="modal-content">
+            <h2 id="dayModalTitle">📅 Day Tasks Record</h2>
+            <p id="dayModalSubInfo" style="margin-bottom: 10px; font-size: 0.85rem; color: #555;"></p>
+            <div id="dayModalBody"></div>
+            <button id="closeDayModalBtn" class="btn-register" style="margin-top: 15px;" data-i18n="closeBtn">Close</button>
+        </div>
+    </div>
+
+    <!-- Hidden global file input for uploading hero pictures -->
+    <input type="file" id="globalImageInput" accept="image/*" style="display: none;">
+
     <script src="script.js"></script>
 </body>
 </html>
