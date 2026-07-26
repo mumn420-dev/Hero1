@@ -1,6 +1,5 @@
 let heroes = [];
 let currentLang = localStorage.getItem('herotrack_lang') || 'en';
-let activeUploadHeroId = null; // Tracks which hero is currently getting a picture update
 
 const translations = {
     en: {
@@ -61,7 +60,6 @@ const modalReportBody = document.getElementById('modalReportBody');
 const modalMonthInfo = document.getElementById('modalMonthInfo');
 const langToggleBtn = document.getElementById('langToggleBtn');
 
-const globalImageInput = document.getElementById('globalImageInput');
 const dayModal = document.getElementById('dayModal');
 const dayModalTitle = document.getElementById('dayModalTitle');
 const dayModalSubInfo = document.getElementById('dayModalSubInfo');
@@ -70,7 +68,7 @@ const closeDayModalBtn = document.getElementById('closeDayModalBtn');
 
 function init() {
     loadData();
-    checkDailyReset(); // Checks if a new calendar day has arrived and resets daily checkboxes/tasks
+    checkDailyReset(); 
     applyLanguage();
 
     registerBtn.addEventListener('click', registerHero);
@@ -82,9 +80,6 @@ function init() {
     closeDayModalBtn.addEventListener('click', () => dayModal.classList.add('hidden'));
 
     langToggleBtn.addEventListener('click', toggleLanguage);
-
-    // Global image file change listener (restored functionality)
-    globalImageInput.addEventListener('change', handleGlobalPhotoUpload);
 
     renderHeroes();
 }
@@ -104,7 +99,6 @@ function loadData() {
     }
 }
 
-// Automatically reset chores completion for a new day while preserving historical day progress records
 function checkDailyReset() {
     const todayStr = new Date().toDateString();
     const lastSavedDate = localStorage.getItem('herotrack_last_date');
@@ -113,7 +107,7 @@ function checkDailyReset() {
         heroes.forEach(hero => {
             if (hero.chores && hero.chores.length > 0) {
                 hero.chores.forEach(chore => {
-                    chore.completed = false; // Reset task status for the new day
+                    chore.completed = false; 
                 });
             }
         });
@@ -171,7 +165,7 @@ function registerHero() {
         photo: null, 
         chores: [],
         days: [0, 0, 0, 0, 0, 0, 0], 
-        dayChoresHistory: {}, // Stores completed tasks snapshot per day index
+        dayChoresHistory: {}, 
         monthlyDays: new Array(daysInMonth).fill(0), 
         weeklyPercentage: 0,
         monthlyPercentage: 0
@@ -270,7 +264,6 @@ function updateTodayTaskProgress(hero) {
         const completedCount = hero.chores.filter(c => c.completed).length;
         hero.days[todayIndex] = Math.round((completedCount / hero.chores.length) * 100);
         
-        // Save snapshot of completed/uncompleted tasks for today's history viewer
         if (!hero.dayChoresHistory) hero.dayChoresHistory = {};
         hero.dayChoresHistory[todayIndex] = hero.chores.map(c => ({ text: c.text, completed: c.completed }));
     }
@@ -288,31 +281,6 @@ function recalculateProgress(hero) {
     hero.monthlyPercentage = Math.round(totalMonthScore / daysInMonth);
 }
 
-// Trigger global file upload dialog for a specific hero
-function triggerPhotoUpload(heroId) {
-    activeUploadHeroId = heroId;
-    globalImageInput.value = ''; // Reset input so selecting same file works
-    globalImageInput.click();
-}
-
-function handleGlobalPhotoUpload(e) {
-    const file = e.target.files[0];
-    if (file && activeUploadHeroId !== null) {
-        const reader = new FileReader();
-        reader.onload = function(uploadEvent) {
-            const hero = heroes.find(h => h.id === activeUploadHeroId);
-            if (hero) {
-                hero.photo = uploadEvent.target.result;
-                saveData();
-                renderHeroes();
-            }
-            activeUploadHeroId = null;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-// View tasks record for clicked day box
 function openDayDetailsModal(heroId, dayIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (!hero) return;
@@ -418,8 +386,9 @@ function renderHeroes() {
 
         card.innerHTML = `
             <div class="hero-profile">
-                <div class="avatar-container" onclick="triggerPhotoUpload(${hero.id})" title="Click to change profile picture">
+                <div class="avatar-container" id="avatar-${hero.id}" title="Click to change profile picture">
                     ${avatarContent}
+                    <input type="file" id="fileInput-${hero.id}" accept="image/*" style="display: none;">
                 </div>
                 <input type="text" class="hero-name-input" value="${hero.name}" onchange="updateHeroName(${hero.id}, this.value)">
                 <div class="pts-badge">⭐ ${hero.points} pts</div>
@@ -458,6 +427,27 @@ function renderHeroes() {
         `;
 
         heroesListContainer.appendChild(card);
+
+        // Attach dedicated click and change handler per individual hero card scope for 100% reliable image loading
+        const avatarBox = document.getElementById(`avatar-${hero.id}`);
+        const fileInput = document.getElementById(`fileInput-${hero.id}`);
+
+        avatarBox.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(uploadEvent) {
+                    hero.photo = uploadEvent.target.result;
+                    saveData();
+                    renderHeroes();
+                };
+                reader.readAsDataURL(file);
+            }
+        });
     });
 }
 
@@ -468,6 +458,5 @@ window.removeHero = removeHero;
 window.openDayDetailsModal = openDayDetailsModal;
 window.updateHeroName = updateHeroName;
 window.updateChoreText = updateChoreText;
-window.triggerPhotoUpload = triggerPhotoUpload;
 
 init();
