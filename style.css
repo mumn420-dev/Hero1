@@ -8,7 +8,7 @@
 body {
     background-color: #2b3e50;
     color: #333;
-    padding: 20px;
+    padding: 15px;
     display: flex;
     justify-content: center;
 }
@@ -81,6 +81,21 @@ body {
 .top-actions {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-lang {
+    background-color: #3498db;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.btn-lang:hover {
+    background-color: #2980b9;
 }
 
 .btn-purple {
@@ -115,19 +130,32 @@ body {
 .hero-card {
     background-color: #ffffff;
     border-radius: 10px;
-    padding: 25px;
+    padding: 20px;
     margin-bottom: 20px;
     display: grid;
-    grid-template-columns: 190px 1fr 230px 160px;
+    grid-template-columns: 180px 1fr 220px 150px;
     align-items: center;
-    gap: 20px;
+    gap: 15px;
     box-shadow: 0 4px 10px rgba(0,0,0,0.15);
 }
 
+/* Mobile & Tablet Responsiveness */
 @media (max-width: 1000px) {
     .hero-card {
         grid-template-columns: 1fr;
         text-align: center;
+        justify-items: center;
+    }
+    .registration-area {
+        max-width: 100%;
+        width: 100%;
+    }
+    .top-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .top-actions {
+        justify-content: center;
     }
 }
 
@@ -158,16 +186,6 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}
-
-.avatar-overlay {
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    background: rgba(0,0,0,0.6);
-    color: white;
-    font-size: 0.6rem;
-    padding: 2px 0;
 }
 
 .hero-name-input {
@@ -219,6 +237,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    width: 100%;
 }
 
 .add-chore-row {
@@ -310,6 +329,7 @@ body {
     color: #27ae60;
     font-weight: bold;
     margin-bottom: 6px;
+    text-align: center;
 }
 
 .days-grid {
@@ -319,7 +339,7 @@ body {
 }
 
 .day-box {
-    width: 28px;
+    width: 26px;
     height: 52px;
     border: 1px solid #bdc3c7;
     background-color: #fff;
@@ -329,7 +349,7 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 3px 0;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: #7f8c8d;
     cursor: pointer;
     position: relative;
@@ -337,7 +357,7 @@ body {
 }
 
 .day-box .day-pct {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
     font-weight: bold;
     z-index: 2;
 }
@@ -346,7 +366,6 @@ body {
     z-index: 2;
 }
 
-/* Incremental fill effect for daily box based on percentage */
 .day-fill {
     position: absolute;
     bottom: 0;
@@ -357,11 +376,7 @@ body {
     transition: height 0.3s ease;
 }
 
-.day-box.missed .day-fill {
-    background-color: #fadbd8;
-}
-
-/* Targets Column (Weekly & Monthly circles with percentage progress borders) */
+/* Targets Column */
 .targets-column {
     display: flex;
     flex-direction: column;
