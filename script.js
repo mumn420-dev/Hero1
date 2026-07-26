@@ -281,6 +281,31 @@ function recalculateProgress(hero) {
     hero.monthlyPercentage = Math.round(totalMonthScore / daysInMonth);
 }
 
+// Direct function to trigger image upload cleanly via dynamic file element creation
+function triggerImageUpload(heroId) {
+    const hero = heroes.find(h => h.id === heroId);
+    if (!hero) return;
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    
+    fileInput.onchange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+                hero.photo = uploadEvent.target.result;
+                saveData();
+                renderHeroes();
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    fileInput.click();
+}
+
 function openDayDetailsModal(heroId, dayIndex) {
     const hero = heroes.find(h => h.id === heroId);
     if (!hero) return;
@@ -386,9 +411,8 @@ function renderHeroes() {
 
         card.innerHTML = `
             <div class="hero-profile">
-                <div class="avatar-container" id="avatar-${hero.id}" title="Click to change profile picture">
+                <div class="avatar-container" onclick="triggerImageUpload(${hero.id})" title="Click to change profile picture">
                     ${avatarContent}
-                    <input type="file" id="fileInput-${hero.id}" accept="image/*" style="display: none;">
                 </div>
                 <input type="text" class="hero-name-input" value="${hero.name}" onchange="updateHeroName(${hero.id}, this.value)">
                 <div class="pts-badge">⭐ ${hero.points} pts</div>
@@ -427,27 +451,6 @@ function renderHeroes() {
         `;
 
         heroesListContainer.appendChild(card);
-
-        // Attach dedicated click and change handler per individual hero card scope for 100% reliable image loading
-        const avatarBox = document.getElementById(`avatar-${hero.id}`);
-        const fileInput = document.getElementById(`fileInput-${hero.id}`);
-
-        avatarBox.addEventListener('click', () => {
-            fileInput.click();
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(uploadEvent) {
-                    hero.photo = uploadEvent.target.result;
-                    saveData();
-                    renderHeroes();
-                };
-                reader.readAsDataURL(file);
-            }
-        });
     });
 }
 
@@ -458,5 +461,6 @@ window.removeHero = removeHero;
 window.openDayDetailsModal = openDayDetailsModal;
 window.updateHeroName = updateHeroName;
 window.updateChoreText = updateChoreText;
+window.triggerImageUpload = triggerImageUpload;
 
 init();
