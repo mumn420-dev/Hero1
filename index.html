@@ -1,48 +1,167 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HeroTrack</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HeroTrack — Level up every day!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="main-container">
-        <!-- Top Control Bar -->
-        <header class="top-bar">
-            <div class="brand">
-                <span class="brand-icon">🚀</span>
-                <span class="brand-title">HeroTrack :</span>
-            </div>
-            <div class="registration-area">
-                <label for="heroNameInput" class="sr-only">Child Name:</label>
-                <input type="text" id="heroNameInput" placeholder="Type name here...">
-                <button id="registerBtn" class="btn-register">🚀 Register Hero</button>
-            </div>
-            <div class="top-actions">
-                <button id="leaderboardBtn" class="btn-purple">🏆 Leaderboard & Monthly Report</button>
-                <button id="resetAllBtn" class="btn-red">🔄 Reset All Data</button>
-            </div>
-        </header>
+<div class="stage">
 
-        <!-- Heroes Container -->
-        <div id="heroesListContainer"></div>
+  <header class="topbar">
+    <div class="hero-badge" id="active-hero-badge">
+      <span class="hero-avatar-slot" id="active-hero-avatar"></span>
+      <div class="hero-badge-text">
+        <span class="hero-title">Playing as</span>
+        <span class="hero-level"><span id="active-hero-name">Add a hero</span></span>
+      </div>
+    </div>
+    <h1 class="wordmark">HeroTrack</h1>
+    <div class="point-pill">
+      <span class="point-star">⭐</span>
+      <span id="total-points">0</span>
+      <span class="point-label">points</span>
+    </div>
+  </header>
+
+  <div class="hero-switcher" id="hero-switcher" aria-label="Switch hero"></div>
+
+  <nav class="tabs" id="tabs" role="tablist">
+    <button class="tab active" data-tab="quests" role="tab" aria-selected="true">🎯 Quests</button>
+    <button class="tab" data-tab="weekly" role="tab" aria-selected="false">🗓️ Weekly</button>
+    <button class="tab" data-tab="monthly" role="tab" aria-selected="false">🏆 Monthly</button>
+    <button class="tab" data-tab="heroes" role="tab" aria-selected="false">🧙 Heroes</button>
+  </nav>
+
+  <!-- QUESTS TAB -->
+  <section class="panel" id="panel-quests" data-panel="quests">
+
+    <div class="today-card">
+      <span id="today-label"></span>
+      <span id="today-points-earned">+0 today</span>
     </div>
 
-    <!-- Monthly Report Modal Choice -->
-    <div id="reportModal" class="modal hidden">
-        <div class="modal-content">
-            <h2>🏆 Monthly Report & Leaderboard</h2>
-            <p id="modalMonthInfo">Current Month Statistics:</p>
-            <div id="modalReportBody"></div>
-            <button id="closeModalBtn" class="btn-register" style="margin-top: 15px;">Close Report</button>
-        </div>
+    <form id="quest-form" autocomplete="off">
+      <input type="text" id="quest-name" placeholder="What's the quest? e.g. Brush teeth" maxlength="50" required>
+      <div class="point-choice" id="point-choice" role="radiogroup" aria-label="Points for this quest">
+        <button type="button" class="point-choice-btn" data-points="5">Quick +5</button>
+        <button type="button" class="point-choice-btn active" data-points="10">Standard +10</button>
+        <button type="button" class="point-choice-btn" data-points="20">Epic +20</button>
+      </div>
+      <button type="submit" class="btn-add">Add quest ➕</button>
+    </form>
+
+    <div class="quests" id="quest-list"></div>
+
+    <p class="empty-state" id="empty-state" hidden>
+      No quests yet! Add your first one above and start earning stars. ⭐
+    </p>
+    <p class="empty-state" id="no-hero-state" hidden>
+      Add a hero first on the 🧙 Heroes tab, then come back to give them quests.
+    </p>
+  </section>
+
+  <!-- WEEKLY TAB -->
+  <section class="panel hidden" id="panel-weekly" data-panel="weekly">
+    <div class="board-header">
+      <h2>This Week's Champions</h2>
+      <span class="board-sub" id="weekly-reset">Resets Monday</span>
+    </div>
+    <div class="podium" id="weekly-podium"></div>
+    <ol class="board-list" id="weekly-list"></ol>
+    <p class="empty-state" id="weekly-empty-state" hidden>
+      Add some heroes to see them on the leaderboard.
+    </p>
+  </section>
+
+  <!-- MONTHLY TAB -->
+  <section class="panel hidden" id="panel-monthly" data-panel="monthly">
+    <div class="board-header">
+      <h2>This Month's Legends</h2>
+      <span class="board-sub" id="monthly-reset">Resets next month</span>
+    </div>
+    <div class="podium" id="monthly-podium"></div>
+    <ol class="board-list" id="monthly-list"></ol>
+    <p class="empty-state" id="monthly-empty-state" hidden>
+      Add some heroes to see them on the leaderboard.
+    </p>
+  </section>
+
+  <!-- HEROES TAB -->
+  <section class="panel hidden" id="panel-heroes" data-panel="heroes">
+    <div class="board-header">
+      <h2>Your Heroes</h2>
+      <span class="board-sub">Add anyone — including you!</span>
     </div>
 
-    <!-- Hidden file input for photo uploads -->
-    <input type="file" id="globalPhotoInput" accept="image/*" class="hidden">
+    <form id="hero-form" autocomplete="off">
+      <div class="hero-row">
+        <label class="photo-upload" for="hero-photo" id="photo-upload-label">
+          <span id="hero-photo-placeholder">📷</span>
+          <img id="hero-photo-preview" alt="" hidden>
+        </label>
+        <input type="file" id="hero-photo" accept="image/*" class="visually-hidden">
+        <input type="text" id="hero-name" placeholder="Hero's name, e.g. Mom, Max, Me" maxlength="30" required>
+      </div>
+      <button type="submit" class="btn-add">Add hero ➕</button>
+    </form>
 
-    <script src="script.js"></script>
+    <div class="quests" id="hero-list"></div>
+
+    <p class="empty-state" id="hero-empty-state" hidden>
+      No heroes yet. Add one above — tap the camera to give them a photo.
+    </p>
+  </section>
+
+  <footer class="ledger-footer">
+    <span>Everything is saved on this device only.</span>
+  </footer>
+
+</div>
+
+<div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
+
+<template id="quest-template">
+  <article class="quest-card">
+    <button class="quest-check" type="button" aria-pressed="false">
+      <span class="check-mark">✓</span>
+    </button>
+    <div class="quest-text">
+      <h3 class="quest-name"></h3>
+      <div class="quest-meta">
+        <span class="streak-pill">🔥 <span class="streak-number">0</span> day streak</span>
+      </div>
+    </div>
+    <div class="quest-points">+<span class="points-value"></span></div>
+    <button class="quest-remove" type="button" aria-label="Delete quest">✕</button>
+  </article>
+</template>
+
+<template id="hero-card-template">
+  <article class="quest-card hero-card">
+    <span class="hero-avatar-slot hero-card-avatar"></span>
+    <div class="quest-text">
+      <h3 class="quest-name hero-card-name"></h3>
+      <div class="quest-meta hero-card-sub"></div>
+    </div>
+    <button class="quest-remove" type="button" aria-label="Remove hero">✕</button>
+  </article>
+</template>
+
+<template id="board-row-template">
+  <li class="board-row">
+    <span class="board-rank"></span>
+    <span class="hero-avatar-slot board-avatar"></span>
+    <span class="board-name"></span>
+    <span class="board-points"></span>
+  </li>
+</template>
+
+<script src="script.js"></script>
 </body>
 </html>
